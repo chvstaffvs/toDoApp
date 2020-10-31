@@ -23,3 +23,7 @@ class User(db.Entity):
 
     def before_insert(self):
         self.change_password()
+
+    @orm.db_session
+    def verify_password(self, password: str) -> bool:
+        return bcrypt.verify(password, self.password)

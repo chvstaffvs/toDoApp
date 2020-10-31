@@ -3,3 +3,4 @@ pony
 pyjwt
 passlib
 bcrypt
+cryptography
