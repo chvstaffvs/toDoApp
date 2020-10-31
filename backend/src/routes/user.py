@@ -1,9 +1,12 @@
 from datetime import date
 from typing import List
 from fastapi import Body, Path, Query
+from fastapi.param_functions import Depends
 from controllers import UserController
+from controllers.auth import AuthController
 from dtos import ResponseUserDTO, RegisterUserDTO
 from dtos.user import UserDTO
+from models.user import User
 from routes.base import CustomRouter, filter_generator
 
 router = CustomRouter()
@@ -15,8 +18,8 @@ async def register_user(user_data: RegisterUserDTO = Body(...)):
 
 
 @router.get("/id/{id}", response_model=ResponseUserDTO)
-async def get_user_by_id(id: int = Path(...)):
-    return UserController.get(id)
+async def get_user(user: User = Depends(AuthController.verify_token)):
+    return UserController.get(user.id)
 
 
 @router.get("/username/{username}", response_model=ResponseUserDTO)
@@ -33,16 +36,22 @@ async def list_users(
     return UserController.list(filter_generator(locals()))
 
 
-@router.put("/edit/{id}", response_model=ResponseUserDTO)
-async def edit_user(id: int = Path(...), user_data: UserDTO.EditSchema = Body(...)):
-    return UserController.update(id, user_data.dict())
+@router.put("/edit", response_model=ResponseUserDTO)
+async def edit_user(
+    user_data: UserDTO.EditSchema = Body(...),
+    user: User = Depends(AuthController.verify_token),
+):
+    return UserController.update(user.id, user_data.dict())
 
 
-@router.put("/password/{id}", response_model=ResponseUserDTO)
-async def change_password(id: int = Path(...), password: str = Body(..., embed=True)):
-    return UserController.change_password(id, password)
+@router.put("/password/", response_model=ResponseUserDTO)
+async def change_password(
+    password: str = Body(..., embed=True),
+    user: User = Depends(AuthController.verify_token),
+):
+    return UserController.change_password(user.id, password)
 
 
-@router.delete("/{id}")
-async def delete(id: int = Path(...)):
-    return UserController.delete(id)
+@router.delete("/")
+async def delete(user: User = Depends(AuthController.verify_token)):
+    return UserController.delete(user.id)
