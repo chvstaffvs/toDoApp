@@ -7,7 +7,7 @@ class CustomRouter(APIRouter):
         return self.post(path, response_model=response_model, status_code=201)
 
 
-def filter_generator(locals_: Dict[str, Any], exclude: List[str] = []):
+def filter_generator(locals_: Dict[str, Any], *exclude: str):
     return {
         key: value
         for key, value in locals_.items()

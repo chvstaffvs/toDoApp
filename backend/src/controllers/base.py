@@ -2,10 +2,12 @@ from abc import ABCMeta, abstractmethod
 from typing import Any, TypeVar
 
 from pony import orm
-from pony.orm.core import ObjectNotFound
+from pony.orm.core import ObjectNotFound, TransactionIntegrityError
 from models.database import db
 from dtos.base import BaseDTO
 from fastapi import HTTPException
+
+from models.user import User
 
 
 class BaseController(metaclass=ABCMeta):
@@ -16,8 +18,11 @@ class BaseController(metaclass=ABCMeta):
     @classmethod
     @orm.db_session
     def create(cls, schema: dict, raw: bool = False):
-        obj = cls.model(**schema)
-        return obj if raw else cls.dto.parse_obj(obj.to_dict())
+        try:
+            obj = cls.model(**schema)
+            return obj if raw else cls.dto.parse_obj(obj.to_dict())
+        except TransactionIntegrityError:
+            raise HTTPException(400, detail="username already taken")
 
     @classmethod
     @orm.db_session
@@ -61,3 +66,13 @@ class BaseController(metaclass=ABCMeta):
     def delete(cls, id: int):
         obj = cls.get(id, raw=True)
         obj.delete()
+
+    @classmethod
+    @orm.db_session
+    def protected_operation(cls, operation: str, id: int, user: User, *args, **kwargs):
+        try:
+            obj = cls.get(id, True)
+            assert obj.user.id == user.id
+            return getattr(cls, operation)(id, *args, **kwargs)
+        except AssertionError:
+            raise HTTPException(403, detail="todo not owned by user")

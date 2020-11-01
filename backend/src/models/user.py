@@ -3,16 +3,19 @@ from models.database import db
 from datetime import date
 from passlib.hash import bcrypt
 
+from models.todos import ToDos
+
 
 class User(db.Entity):
     _table_ = "users"
 
-    username = orm.Required(str)
+    username = orm.Required(str, unique=True)
     password = orm.Required(str)
     email = orm.Required(str)
     first_name = orm.Required(str)
     last_name = orm.Required(str)
     birth_date = orm.Required(date)
+    todos = orm.Set(ToDos, cascade_delete=True)
 
     def full_name(self):
         return f"{self.first_name} {self.last_name}"

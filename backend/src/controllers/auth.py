@@ -51,7 +51,7 @@ class AuthController:
             refresh = data.get("refresh")
             assert user_id
             assert refresh is not None
-            return UserController.get(user_id), refresh
+            return UserController.get(user_id, True), refresh
         except PyJWTError:
             cls.token_exception()
         except AssertionError:
